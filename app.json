@@ -1,30 +1,47 @@
 {
   "expo": {
-    "name": "eon-chat",
+    "name": "Eon Chat",
     "slug": "eon-chat",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "dark",
     "newArchEnabled": true,
+    "scheme": "eonchat",
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#0a0a0f"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "pro.eontech.chat",
+      "infoPlist": {
+        "NSMicrophoneUsageDescription": "Eon Chat usa o microfone para entrada de voz",
+        "NSCameraUsageDescription": "Eon Chat usa a câmera para enviar fotos",
+        "NSPhotoLibraryUsageDescription": "Eon Chat acessa suas fotos para anexar arquivos"
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#0a0a0f"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "package": "pro.eontech.chat",
+      "permissions": ["RECORD_AUDIO", "CAMERA", "READ_EXTERNAL_STORAGE"]
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-font"
+    ],
+    "owner": "eontech",
+    "extra": {
+      "eas": {
+        "projectId": ""
+      }
     }
   }
 }
