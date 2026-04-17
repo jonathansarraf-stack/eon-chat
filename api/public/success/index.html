@@ -1,0 +1,7 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><script>
+  // Redirect to main page with session_id param
+  const params = new URLSearchParams(window.location.search);
+  const sessionId = params.get('session_id');
+  window.location.href = '/?session_id=' + (sessionId || '');
+</script></head></html>

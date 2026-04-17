@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Eon Chat — Claude on your machine</title>
+  <style>
+    :root {
+      --bg: #0a0a0f;
+      --bg2: #0f0f18;
+      --surface: #14141e;
+      --border: rgba(255,255,255,0.08);
+      --accent: #c5ff3d;
+      --accent-soft: rgba(197,255,61,0.1);
+      --accent-border: rgba(197,255,61,0.2);
+      --text: #f5f5f7;
+      --text2: #9a9aa8;
+      --text3: #5a5a68;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* Nav */
+    nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+    }
+
+    .logo-circle {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    .logo-circle span {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .logo-circle .dot {
+      position: absolute;
+      top: 6px;
+      right: 8px;
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: var(--accent);
+    }
+
+    .logo-name {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 20px;
+      align-items: center;
+    }
+
+    .nav-links a {
+      color: var(--text2);
+      text-decoration: none;
+      font-size: 13px;
+      transition: color 0.2s;
+    }
+
+    .nav-links a:hover { color: var(--text); }
+
+    /* Hero */
+    .hero {
+      text-align: center;
+      padding: 80px 0 60px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--accent-soft);
+      border: 1px solid var(--accent-border);
+      border-radius: 20px;
+      padding: 6px 14px;
+      font-size: 11px;
+      font-family: monospace;
+      color: var(--accent);
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      margin-bottom: 28px;
+    }
+
+    h1 {
+      font-size: 48px;
+      font-weight: 300;
+      line-height: 1.15;
+      margin-bottom: 20px;
+    }
+
+    h1 em {
+      font-style: italic;
+      color: var(--accent);
+    }
+
+    .subtitle {
+      font-size: 17px;
+      color: var(--text2);
+      max-width: 480px;
+      margin: 0 auto 40px;
+      line-height: 1.7;
+    }
+
+    /* CTA */
+    .cta-group {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 28px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.2s;
+      cursor: pointer;
+      border: none;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: var(--bg);
+    }
+
+    .btn-primary:hover {
+      filter: brightness(1.1);
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+      background: var(--surface);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    .btn-secondary:hover {
+      border-color: var(--accent-border);
+    }
+
+    /* Features */
+    .features {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      padding: 60px 0;
+      border-top: 1px solid var(--border);
+    }
+
+    .feature {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+    }
+
+    .feature-icon {
+      font-size: 24px;
+      margin-bottom: 12px;
+    }
+
+    .feature h3 {
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+
+    .feature p {
+      font-size: 13px;
+      color: var(--text2);
+      line-height: 1.6;
+    }
+
+    /* Pricing */
+    .pricing {
+      text-align: center;
+      padding: 60px 0;
+      border-top: 1px solid var(--border);
+    }
+
+    .pricing h2 {
+      font-size: 32px;
+      font-weight: 300;
+      margin-bottom: 8px;
+    }
+
+    .pricing .sub {
+      color: var(--text2);
+      font-size: 14px;
+      margin-bottom: 32px;
+    }
+
+    .price-card {
+      background: var(--surface);
+      border: 1px solid var(--accent-border);
+      border-radius: 16px;
+      padding: 40px;
+      max-width: 380px;
+      margin: 0 auto;
+      text-align: center;
+    }
+
+    .price-card .plan-name {
+      font-size: 12px;
+      letter-spacing: 2px;
+      color: var(--accent);
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+
+    .price-card .price {
+      font-size: 48px;
+      font-weight: 300;
+      margin-bottom: 4px;
+    }
+
+    .price-card .price span {
+      font-size: 16px;
+      color: var(--text2);
+    }
+
+    .price-card .period {
+      font-size: 13px;
+      color: var(--text3);
+      margin-bottom: 24px;
+    }
+
+    .price-card ul {
+      list-style: none;
+      text-align: left;
+      margin-bottom: 28px;
+    }
+
+    .price-card li {
+      font-size: 14px;
+      color: var(--text2);
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .price-card li::before {
+      content: '';
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+      flex-shrink: 0;
+    }
+
+    .price-card .btn { width: 100%; justify-content: center; }
+
+    /* How it works */
+    .how {
+      padding: 60px 0;
+      border-top: 1px solid var(--border);
+    }
+
+    .how h2 {
+      font-size: 28px;
+      font-weight: 300;
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    .steps {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .step {
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+    }
+
+    .step-num {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--accent-soft);
+      border: 1px solid var(--accent-border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--accent);
+      flex-shrink: 0;
+    }
+
+    .step code {
+      background: rgba(0,0,0,0.5);
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 13px;
+      color: var(--accent);
+    }
+
+    .step h4 {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .step p {
+      font-size: 13px;
+      color: var(--text2);
+    }
+
+    /* Footer */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 32px 0;
+      text-align: center;
+    }
+
+    footer p {
+      font-size: 12px;
+      color: var(--text3);
+    }
+
+    footer a {
+      color: var(--text2);
+      text-decoration: none;
+    }
+
+    /* Success page overlay */
+    .success-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(10,10,15,0.95);
+      z-index: 100;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .success-overlay.show { display: flex; }
+
+    .success-card {
+      background: var(--surface);
+      border: 1px solid var(--accent-border);
+      border-radius: 16px;
+      padding: 48px;
+      max-width: 440px;
+      text-align: center;
+    }
+
+    .success-card h2 {
+      font-size: 24px;
+      margin-bottom: 12px;
+    }
+
+    .success-card p {
+      color: var(--text2);
+      font-size: 14px;
+      margin-bottom: 20px;
+    }
+
+    .key-box {
+      background: rgba(0,0,0,0.5);
+      border: 1px solid var(--accent-border);
+      border-radius: 8px;
+      padding: 16px;
+      font-family: monospace;
+      font-size: 13px;
+      color: var(--accent);
+      word-break: break-all;
+      margin-bottom: 16px;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .key-box:hover::after {
+      content: 'Click to copy';
+      position: absolute;
+      top: -24px;
+      right: 0;
+      font-size: 10px;
+      color: var(--text3);
+    }
+
+    .instructions {
+      text-align: left;
+      background: var(--bg2);
+      border-radius: 8px;
+      padding: 16px;
+      margin-top: 20px;
+    }
+
+    .instructions code {
+      background: rgba(0,0,0,0.5);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 12px;
+      color: var(--accent);
+    }
+
+    .instructions li {
+      font-size: 13px;
+      color: var(--text2);
+      margin-bottom: 8px;
+      list-style: decimal;
+      margin-left: 16px;
+    }
+
+    @media (max-width: 600px) {
+      h1 { font-size: 32px; }
+      .features { grid-template-columns: 1fr; }
+      .hero { padding: 40px 0; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <nav>
+    <a href="/" class="logo">
+      <div class="logo-circle">
+        <span>E</span>
+        <div class="dot"></div>
+      </div>
+      <span class="logo-name">Eon Chat</span>
+    </a>
+    <div class="nav-links">
+      <a href="https://github.com/jonathansarraf-stack/eon-chat" target="_blank">GitHub</a>
+      <a href="#pricing">Pricing</a>
+      <a href="#how">Setup</a>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="badge">OPEN SOURCE</div>
+    <h1>Claude Code,<br><em>from your pocket.</em></h1>
+    <p class="subtitle">
+      A mobile-first chat interface that connects to Claude Code running on your machine.
+      Real-time streaming, persistent sessions, full tool access.
+    </p>
+    <div class="cta-group">
+      <a href="#pricing" class="btn btn-primary">Get Started</a>
+      <a href="https://github.com/jonathansarraf-stack/eon-chat" class="btn btn-secondary" target="_blank">View Source</a>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section class="features">
+    <div class="feature">
+      <div class="feature-icon">&#x26A1;</div>
+      <h3>Real-time streaming</h3>
+      <p>See Claude's responses as they're generated. No waiting for the full answer.</p>
+    </div>
+    <div class="feature">
+      <div class="feature-icon">&#x1F4C4;</div>
+      <h3>Tool activity log</h3>
+      <p>Watch Claude read files, edit code, and run commands in real time.</p>
+    </div>
+    <div class="feature">
+      <div class="feature-icon">&#x1F512;</div>
+      <h3>100% local</h3>
+      <p>Everything runs on your machine. Your code never leaves your computer.</p>
+    </div>
+    <div class="feature">
+      <div class="feature-icon">&#x1F4BE;</div>
+      <h3>Persistent sessions</h3>
+      <p>Conversations saved locally in SQLite. Pick up where you left off.</p>
+    </div>
+  </section>
+
+  <!-- How it works -->
+  <section class="how" id="how">
+    <h2>Setup in 3 steps</h2>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div>
+          <h4>Install Claude Code</h4>
+          <p><code>npm install -g @anthropic-ai/claude-code</code> and run <code>claude login</code></p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div>
+          <h4>Clone and setup</h4>
+          <p><code>git clone https://github.com/jonathansarraf-stack/eon-chat.git && cd eon-chat && ./setup.sh</code></p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div>
+          <h4>Activate your license</h4>
+          <p>Paste your license key in the app settings. 14-day free trial included.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Pricing -->
+  <section class="pricing" id="pricing">
+    <h2>Simple pricing</h2>
+    <p class="sub">14-day free trial. Cancel anytime.</p>
+
+    <div class="price-card">
+      <div class="plan-name">PRO</div>
+      <div class="price">$9<span>/mo</span></div>
+      <div class="period">billed monthly</div>
+      <ul>
+        <li>Unlimited conversations</li>
+        <li>Real-time streaming</li>
+        <li>Tool activity log</li>
+        <li>Persistent sessions</li>
+        <li>Multi-session tabs</li>
+        <li>Priority support</li>
+      </ul>
+      <button class="btn btn-primary" id="checkout-btn" onclick="startCheckout()">
+        Start Free Trial
+      </button>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <p>&copy; 2026 <a href="https://eontech.pro">Eon Tech</a>. Open source under MIT license.</p>
+  </footer>
+</div>
+
+<!-- Success overlay -->
+<div class="success-overlay" id="success-overlay">
+  <div class="success-card">
+    <h2>Welcome to Eon Chat</h2>
+    <p>Your license key:</p>
+    <div class="key-box" id="license-key" onclick="copyKey()">Loading...</div>
+    <p style="font-size:12px;color:var(--text3)">Click to copy</p>
+    <div class="instructions">
+      <ol>
+        <li>Open Eon Chat app on your machine</li>
+        <li>Go to Settings and paste your license key</li>
+        <li>Or run: <code>echo '{"key":"YOUR_KEY"}' > ~/.eon-chat/license.json</code></li>
+      </ol>
+    </div>
+  </div>
+</div>
+
+<script>
+  const API_BASE = window.location.origin;
+
+  async function startCheckout() {
+    const btn = document.getElementById('checkout-btn');
+    btn.textContent = 'Redirecting...';
+    btn.disabled = true;
+
+    try {
+      const res = await fetch(`${API_BASE}/v1/checkout`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          successUrl: window.location.origin,
+          cancelUrl: window.location.origin,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        alert('Stripe not configured yet. Contact support.');
+        btn.textContent = 'Start Free Trial';
+        btn.disabled = false;
+      }
+    } catch (e) {
+      alert('Error: ' + e.message);
+      btn.textContent = 'Start Free Trial';
+      btn.disabled = false;
+    }
+  }
+
+  function copyKey() {
+    const key = document.getElementById('license-key').textContent;
+    navigator.clipboard.writeText(key);
+    document.getElementById('license-key').style.borderColor = 'var(--accent)';
+    setTimeout(() => {
+      document.getElementById('license-key').style.borderColor = '';
+    }, 1000);
+  }
+
+  // Check if returning from successful checkout
+  const params = new URLSearchParams(window.location.search);
+  const sessionId = params.get('session_id');
+
+  if (sessionId) {
+    document.getElementById('success-overlay').classList.add('show');
+
+    // Poll for license key
+    async function fetchKey() {
+      try {
+        const res = await fetch(`${API_BASE}/v1/checkout/${sessionId}/license`);
+        const data = await res.json();
+        if (data.key) {
+          document.getElementById('license-key').textContent = data.key;
+        } else {
+          // Retry in 3s (webhook might not have fired yet)
+          setTimeout(fetchKey, 3000);
+        }
+      } catch {
+        setTimeout(fetchKey, 3000);
+      }
+    }
+    fetchKey();
+  }
+</script>
+
+</body>
+</html>

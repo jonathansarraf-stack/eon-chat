@@ -9,6 +9,7 @@ import MessageBubble from './src/components/MessageBubble';
 import TypingIndicator from './src/components/TypingIndicator';
 import ActivityLog from './src/components/ActivityLog';
 import Composer from './src/components/Composer';
+import LicenseScreen from './src/components/LicenseScreen';
 import { colors } from './src/theme';
 import { Session, Message, ActivityEntry } from './src/types';
 import * as api from './src/api';
@@ -27,6 +28,7 @@ export default function App() {
   const [userEmail, setUserEmail] = useState('');
   const [authChecked, setAuthChecked] = useState(false);
   const [notAuthenticated, setNotAuthenticated] = useState(false);
+  const [licenseExpired, setLicenseExpired] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
   const abortRef = useRef<AbortController | null>(null);
 
@@ -232,6 +234,11 @@ export default function App() {
         setTyping(false);
         setSending(false);
         setStreamingText('');
+        // Check if license expired
+        if (error.includes('license_expired') || error.includes('402')) {
+          setLicenseExpired(true);
+          return;
+        }
         setMessages(prev => [
           ...prev,
           {
@@ -254,6 +261,17 @@ export default function App() {
     setSending(false);
     setStreamingText('');
   }, []);
+
+  // Show license screen when expired
+  if (licenseExpired) {
+    const apiBase = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3777';
+    return (
+      <View style={styles.root}>
+        <StatusBar style="light" />
+        <LicenseScreen apiBase={apiBase} onActivated={() => setLicenseExpired(false)} />
+      </View>
+    );
+  }
 
   // Show not authenticated screen
   if (serverOnline && authChecked && notAuthenticated) {

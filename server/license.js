@@ -15,10 +15,12 @@
 const fs = require('fs');
 const path = require('path');
 const https = require('https');
+const http = require('http');
 
 const DATA_DIR = process.env.EON_DATA_DIR || path.join(require('os').homedir(), '.eon-chat');
 const LICENSE_FILE = path.join(DATA_DIR, 'license.json');
 const VERIFY_URL = process.env.EON_LICENSE_URL || 'https://api.eon.chat/v1/license/verify';
+const USE_HTTP = VERIFY_URL.startsWith('http://');
 
 // License states
 const STATUS = {
@@ -63,8 +65,10 @@ function verifyRemote(key) {
     const body = JSON.stringify({ key });
     const url = new URL(VERIFY_URL);
 
-    const req = https.request({
+    const transport = USE_HTTP ? http : https;
+    const req = transport.request({
       hostname: url.hostname,
+      port: url.port || (USE_HTTP ? 80 : 443),
       path: url.pathname,
       method: 'POST',
       headers: {

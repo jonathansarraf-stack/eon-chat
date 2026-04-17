@@ -1,12 +1,17 @@
 {
-  "name": "eon-chat-server",
+  "name": "eon-chat",
   "version": "1.0.0",
-  "description": "Local backend for Eon Chat — wraps Claude Code CLI",
+  "description": "Mobile-first chat interface for Claude Code. Runs locally on your machine.",
   "main": "index.js",
+  "bin": {
+    "eon-chat": "./cli.js"
+  },
   "scripts": {
     "start": "node index.js",
     "dev": "node --watch index.js"
   },
+  "keywords": ["claude", "chat", "ai", "claude-code", "anthropic"],
+  "license": "MIT",
   "dependencies": {
     "better-sqlite3": "^11.7.0",
     "cors": "^2.8.5",
