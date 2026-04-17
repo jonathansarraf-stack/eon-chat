@@ -19,7 +19,7 @@ const http = require('http');
 
 const DATA_DIR = process.env.EON_DATA_DIR || path.join(require('os').homedir(), '.eon-chat');
 const LICENSE_FILE = path.join(DATA_DIR, 'license.json');
-const VERIFY_URL = process.env.EON_LICENSE_URL || 'https://api.eon.chat/v1/license/verify';
+const VERIFY_URL = process.env.EON_LICENSE_URL || 'https://eontech.pro/eon-chat/v1/license/verify';
 const USE_HTTP = VERIFY_URL.startsWith('http://');
 
 // License states

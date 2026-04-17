@@ -1,5 +1,15 @@
 'use strict';
 
+// Load .env
+const fs = require('fs');
+const envPath = require('path').join(__dirname, '.env');
+if (fs.existsSync(envPath)) {
+  fs.readFileSync(envPath, 'utf8').split('\n').forEach(line => {
+    const match = line.match(/^\s*([^#][^=]+?)\s*=\s*(.+?)\s*$/);
+    if (match && !process.env[match[1]]) process.env[match[1]] = match[2];
+  });
+}
+
 const express = require('express');
 const crypto = require('crypto');
 const cors = require('cors');
