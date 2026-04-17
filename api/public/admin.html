@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Eon Chat — Admin</title>
+  <style>
+    :root {
+      --bg:#0a0a0f;--bg2:#0f0f18;--surface:#14141e;--surface2:#1c1c2a;
+      --border:rgba(255,255,255,0.08);--accent:#c5ff3d;--accent-soft:rgba(197,255,61,0.1);
+      --accent-border:rgba(197,255,61,0.2);--text:#f5f5f7;--text2:#9a9aa8;--text3:#5a5a68;
+      --danger:#ff5e5e;--green:#4ade80;--yellow:#ffc800;
+    }
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;min-height:100vh}
+    .container{max-width:960px;margin:0 auto;padding:0 20px}
+
+    /* Login */
+    #login-view{display:flex;justify-content:center;align-items:center;min-height:100vh}
+    .login-card{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:40px;width:100%;max-width:380px;text-align:center}
+    .login-card h2{font-size:20px;font-weight:300;margin-bottom:24px}
+    .login-card input{width:100%;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:10px;padding:12px 16px;font-size:14px;color:var(--text);margin-bottom:12px;outline:none}
+    .login-card input:focus{border-color:var(--accent-border)}
+    .login-card button{width:100%;background:var(--accent);color:var(--bg);border:none;border-radius:10px;padding:12px;font-size:13px;font-weight:600;letter-spacing:1px;cursor:pointer}
+    .login-card button:hover{filter:brightness(1.1)}
+    .login-card .error{color:var(--danger);font-size:12px;margin-bottom:12px;min-height:16px}
+
+    /* Dashboard */
+    #dashboard-view{display:none}
+    .topbar{display:flex;justify-content:space-between;align-items:center;padding:20px 0;border-bottom:1px solid var(--border);margin-bottom:24px}
+    .topbar h1{font-size:18px;font-weight:500}
+    .topbar .user{display:flex;align-items:center;gap:12px}
+    .topbar .user span{font-size:12px;color:var(--text2);font-family:monospace}
+    .topbar button{background:none;border:1px solid var(--border);color:var(--text2);padding:6px 12px;border-radius:6px;font-size:11px;cursor:pointer}
+    .topbar button:hover{border-color:var(--accent-border);color:var(--text)}
+
+    /* Stats cards */
+    .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px}
+    .stat{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px}
+    .stat .label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}
+    .stat .value{font-size:28px;font-weight:300}
+    .stat .sub{font-size:11px;color:var(--text2);margin-top:4px}
+    .stat.accent .value{color:var(--accent)}
+    .stat.green .value{color:var(--green)}
+    .stat.yellow .value{color:var(--yellow)}
+    .stat.danger .value{color:var(--danger)}
+
+    /* Table */
+    .panel{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:24px}
+    .panel-header{display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid var(--border)}
+    .panel-header h3{font-size:14px;font-weight:500}
+    .toolbar{display:flex;gap:8px;align-items:center}
+    .toolbar input{background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:12px;color:var(--text);width:200px;outline:none}
+    .toolbar select{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:12px;color:var(--text);outline:none}
+    .toolbar button{background:var(--accent);color:var(--bg);border:none;border-radius:8px;padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer}
+
+    table{width:100%;border-collapse:collapse}
+    th{text-align:left;font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;padding:10px 16px;border-bottom:1px solid var(--border)}
+    td{font-size:13px;padding:12px 16px;border-bottom:1px solid var(--border)}
+    tr:last-child td{border-bottom:none}
+    tr:hover td{background:rgba(255,255,255,0.02)}
+
+    .badge{display:inline-block;padding:3px 8px;border-radius:6px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px}
+    .badge-active{background:rgba(74,222,128,0.1);color:var(--green);border:1px solid rgba(74,222,128,0.2)}
+    .badge-cancelled{background:rgba(255,94,94,0.1);color:var(--danger);border:1px solid rgba(255,94,94,0.2)}
+    .badge-expired{background:rgba(255,200,0,0.1);color:var(--yellow);border:1px solid rgba(255,200,0,0.2)}
+    .badge-trial{background:rgba(0,240,255,0.1);color:#00f0ff;border:1px solid rgba(0,240,255,0.2)}
+
+    .key-cell{font-family:monospace;font-size:11px;color:var(--text2);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer}
+    .key-cell:hover{color:var(--accent)}
+
+    .actions{display:flex;gap:6px}
+    .actions button{background:none;border:1px solid var(--border);color:var(--text2);padding:4px 8px;border-radius:4px;font-size:10px;cursor:pointer}
+    .actions button:hover{border-color:var(--accent-border);color:var(--text)}
+    .actions button.danger{border-color:rgba(255,94,94,0.3)}
+    .actions button.danger:hover{border-color:var(--danger);color:var(--danger)}
+
+    .empty{text-align:center;padding:40px;color:var(--text3);font-size:13px}
+    .pagination{display:flex;justify-content:space-between;align-items:center;padding:12px 16px}
+    .pagination span{font-size:11px;color:var(--text3)}
+    .pagination button{background:var(--surface2);border:1px solid var(--border);color:var(--text2);padding:6px 12px;border-radius:6px;font-size:11px;cursor:pointer}
+
+    /* Modal */
+    .modal-overlay{display:none;position:fixed;inset:0;background:rgba(10,10,15,0.9);z-index:100;justify-content:center;align-items:center}
+    .modal-overlay.show{display:flex}
+    .modal{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:32px;width:100%;max-width:400px}
+    .modal h3{font-size:16px;margin-bottom:20px}
+    .modal label{font-size:11px;color:var(--text2);display:block;margin-bottom:4px;margin-top:12px}
+    .modal input,.modal select{width:100%;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-size:13px;color:var(--text);outline:none}
+    .modal .btn-row{display:flex;gap:8px;margin-top:20px}
+    .modal .btn-row button{flex:1;padding:10px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;border:none}
+    .modal .btn-cancel{background:var(--surface2);color:var(--text2);border:1px solid var(--border) !important}
+    .modal .btn-confirm{background:var(--accent);color:var(--bg)}
+
+    @media(max-width:700px){.stats{grid-template-columns:repeat(2,1fr)}}
+    @media(max-width:500px){.stats{grid-template-columns:1fr}.toolbar{flex-wrap:wrap}}
+  </style>
+</head>
+<body>
+
+<!-- Login View -->
+<div id="login-view">
+  <div class="login-card">
+    <h2>Eon Chat Admin</h2>
+    <div class="error" id="login-error"></div>
+    <input type="email" id="login-email" placeholder="Email" autocomplete="email">
+    <input type="password" id="login-password" placeholder="Senha" autocomplete="current-password">
+    <button onclick="doLogin()">ENTRAR</button>
+  </div>
+</div>
+
+<!-- Dashboard View -->
+<div id="dashboard-view">
+  <div class="container">
+    <div class="topbar">
+      <h1>Eon Chat Admin</h1>
+      <div class="user">
+        <span id="admin-email"></span>
+        <button onclick="doLogout()">Sair</button>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats">
+      <div class="stat accent"><div class="label">MRR</div><div class="value" id="s-mrr">—</div><div class="sub">receita mensal</div></div>
+      <div class="stat green"><div class="label">Ativos</div><div class="value" id="s-active">—</div><div class="sub" id="s-total-sub"></div></div>
+      <div class="stat"><div class="label">Novos 7d</div><div class="value" id="s-recent">—</div><div class="sub">signups recentes</div></div>
+      <div class="stat"><div class="label">Verificacoes 24h</div><div class="value" id="s-verif">—</div><div class="sub">uso ativo</div></div>
+    </div>
+
+    <!-- Licenses table -->
+    <div class="panel">
+      <div class="panel-header">
+        <h3>Licencas</h3>
+        <div class="toolbar">
+          <input type="text" id="search-input" placeholder="Buscar email ou key..." oninput="debounceLoad()">
+          <select id="filter-status" onchange="loadLicenses()">
+            <option value="">Todos</option>
+            <option value="active">Ativos</option>
+            <option value="cancelled">Cancelados</option>
+            <option value="expired">Expirados</option>
+            <option value="trial">Trial</option>
+          </select>
+          <button onclick="showNewModal()">+ Nova</button>
+        </div>
+      </div>
+      <table>
+        <thead>
+          <tr><th>Email</th><th>Key</th><th>Plano</th><th>Status</th><th>Criado</th><th>Ultimo uso</th><th></th></tr>
+        </thead>
+        <tbody id="licenses-body">
+          <tr><td colspan="7" class="empty">Carregando...</td></tr>
+        </tbody>
+      </table>
+      <div class="pagination">
+        <span id="pagination-info"></span>
+        <div>
+          <button onclick="prevPage()" id="btn-prev" disabled>&lt; Anterior</button>
+          <button onclick="nextPage()" id="btn-next">Proximo &gt;</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- New License Modal -->
+<div class="modal-overlay" id="new-modal">
+  <div class="modal">
+    <h3>Criar Licenca Manual</h3>
+    <label>Email</label>
+    <input type="email" id="new-email" placeholder="usuario@email.com">
+    <label>Plano</label>
+    <select id="new-plan">
+      <option value="pro">Pro ($9/mo)</option>
+      <option value="starter">Starter</option>
+    </select>
+    <div class="btn-row">
+      <button class="btn-cancel" onclick="closeModal('new-modal')">Cancelar</button>
+      <button class="btn-confirm" onclick="createLicense()">Criar</button>
+    </div>
+    <div id="new-result" style="margin-top:16px;font-family:monospace;font-size:12px;color:var(--accent);word-break:break-all;display:none"></div>
+  </div>
+</div>
+
+<!-- Edit License Modal -->
+<div class="modal-overlay" id="edit-modal">
+  <div class="modal">
+    <h3>Editar Licenca</h3>
+    <input type="hidden" id="edit-id">
+    <label>Email</label>
+    <input type="email" id="edit-email">
+    <label>Status</label>
+    <select id="edit-status">
+      <option value="active">Active</option>
+      <option value="cancelled">Cancelled</option>
+      <option value="expired">Expired</option>
+      <option value="trial">Trial</option>
+    </select>
+    <label>Plano</label>
+    <select id="edit-plan">
+      <option value="pro">Pro</option>
+      <option value="starter">Starter</option>
+    </select>
+    <div class="btn-row">
+      <button class="btn-cancel" onclick="closeModal('edit-modal')">Cancelar</button>
+      <button class="btn-confirm" onclick="saveLicense()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = window.location.pathname.replace(/\/admin\.html.*$/, '').replace(/\/$/, '');
+
+let currentPage = 0;
+const PAGE_SIZE = 20;
+let debounceTimer;
+
+// ── Auth ────────────────────────────────────────────────────────────────────
+
+async function doLogin() {
+  const email = document.getElementById('login-email').value;
+  const password = document.getElementById('login-password').value;
+  const errEl = document.getElementById('login-error');
+  errEl.textContent = '';
+
+  try {
+    const res = await fetch(`${API}/admin/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+      credentials: 'include',
+    });
+    const data = await res.json();
+    if (data.ok) {
+      showDashboard(data);
+    } else {
+      errEl.textContent = data.error || 'Login failed';
+    }
+  } catch (e) {
+    errEl.textContent = e.message;
+  }
+}
+
+async function checkSession() {
+  try {
+    const res = await fetch(`${API}/admin/me`, { credentials: 'include' });
+    if (res.ok) {
+      const data = await res.json();
+      showDashboard(data);
+    }
+  } catch {}
+}
+
+async function doLogout() {
+  await fetch(`${API}/admin/logout`, { method: 'POST', credentials: 'include' });
+  location.reload();
+}
+
+function showDashboard(user) {
+  document.getElementById('login-view').style.display = 'none';
+  document.getElementById('dashboard-view').style.display = 'block';
+  document.getElementById('admin-email').textContent = user.email || user.name;
+  loadStats();
+  loadLicenses();
+}
+
+// ── Stats ───────────────────────────────────────────────────────────────────
+
+async function loadStats() {
+  try {
+    const res = await fetch(`${API}/admin/stats`, { credentials: 'include' });
+    const s = await res.json();
+    document.getElementById('s-mrr').textContent = '$' + s.mrr;
+    document.getElementById('s-active').textContent = s.active;
+    document.getElementById('s-total-sub').textContent = `de ${s.total} total`;
+    document.getElementById('s-recent').textContent = s.recentSignups;
+    document.getElementById('s-verif').textContent = s.recentVerifications;
+  } catch {}
+}
+
+// ── Licenses ────────────────────────────────────────────────────────────────
+
+function debounceLoad() {
+  clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(() => { currentPage = 0; loadLicenses(); }, 300);
+}
+
+async function loadLicenses() {
+  const search = document.getElementById('search-input').value;
+  const status = document.getElementById('filter-status').value;
+  const params = new URLSearchParams({ limit: PAGE_SIZE, offset: currentPage * PAGE_SIZE });
+  if (search) params.set('search', search);
+  if (status) params.set('status', status);
+
+  try {
+    const res = await fetch(`${API}/admin/licenses?${params}`, { credentials: 'include' });
+    const { licenses, total } = await res.json();
+    renderTable(licenses);
+    document.getElementById('pagination-info').textContent = `${currentPage * PAGE_SIZE + 1}-${Math.min((currentPage + 1) * PAGE_SIZE, total)} de ${total}`;
+    document.getElementById('btn-prev').disabled = currentPage === 0;
+    document.getElementById('btn-next').disabled = (currentPage + 1) * PAGE_SIZE >= total;
+  } catch {}
+}
+
+function renderTable(licenses) {
+  const body = document.getElementById('licenses-body');
+  if (!licenses.length) {
+    body.innerHTML = '<tr><td colspan="7" class="empty">Nenhuma licenca encontrada</td></tr>';
+    return;
+  }
+  body.innerHTML = licenses.map(l => `
+    <tr>
+      <td>${esc(l.email)}</td>
+      <td class="key-cell" title="${esc(l.key)}" onclick="navigator.clipboard.writeText('${esc(l.key)}')">${esc(l.key.slice(0, 16))}...</td>
+      <td>${esc(l.plan)}</td>
+      <td><span class="badge badge-${l.status}">${l.status}</span></td>
+      <td style="font-size:11px;color:var(--text2)">${fmtDate(l.created_at)}</td>
+      <td style="font-size:11px;color:var(--text2)">${l.last_verified_at ? fmtDate(l.last_verified_at) : '—'}</td>
+      <td>
+        <div class="actions">
+          <button onclick='editLicense(${JSON.stringify(l)})'>Editar</button>
+          <button class="danger" onclick="deleteLicense(${l.id})">Excluir</button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function prevPage() { if (currentPage > 0) { currentPage--; loadLicenses(); } }
+function nextPage() { currentPage++; loadLicenses(); }
+
+// ── CRUD ────────────────────────────────────────────────────────────────────
+
+function showNewModal() {
+  document.getElementById('new-email').value = '';
+  document.getElementById('new-result').style.display = 'none';
+  document.getElementById('new-modal').classList.add('show');
+}
+
+async function createLicense() {
+  const email = document.getElementById('new-email').value;
+  const plan = document.getElementById('new-plan').value;
+  if (!email) return;
+
+  const res = await fetch(`${API}/admin/licenses`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, plan }),
+    credentials: 'include',
+  });
+  const data = await res.json();
+  if (data.key) {
+    const el = document.getElementById('new-result');
+    el.textContent = data.key;
+    el.style.display = 'block';
+    loadLicenses();
+    loadStats();
+  }
+}
+
+function editLicense(l) {
+  document.getElementById('edit-id').value = l.id;
+  document.getElementById('edit-email').value = l.email;
+  document.getElementById('edit-status').value = l.status;
+  document.getElementById('edit-plan').value = l.plan;
+  document.getElementById('edit-modal').classList.add('show');
+}
+
+async function saveLicense() {
+  const id = document.getElementById('edit-id').value;
+  const email = document.getElementById('edit-email').value;
+  const status = document.getElementById('edit-status').value;
+  const plan = document.getElementById('edit-plan').value;
+
+  await fetch(`${API}/admin/licenses/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, status, plan }),
+    credentials: 'include',
+  });
+  closeModal('edit-modal');
+  loadLicenses();
+  loadStats();
+}
+
+async function deleteLicense(id) {
+  if (!confirm('Tem certeza? Isso vai revogar a licenca.')) return;
+  await fetch(`${API}/admin/licenses/${id}`, { method: 'DELETE', credentials: 'include' });
+  loadLicenses();
+  loadStats();
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove('show');
+}
+
+// Close modals on backdrop click
+document.querySelectorAll('.modal-overlay').forEach(el => {
+  el.addEventListener('click', e => { if (e.target === el) el.classList.remove('show'); });
+});
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+
+function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+function fmtDate(ts) {
+  const d = new Date(ts * 1000);
+  return d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+}
+
+// Enter to login
+document.getElementById('login-password').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+
+// Check existing session on load
+checkSession();
+</script>
+</body>
+</html>

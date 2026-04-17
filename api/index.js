@@ -16,9 +16,16 @@ const cors = require('cors');
 const path = require('path');
 const db = require('./db');
 
+const cookieParser = require('cookie-parser');
+const { router: adminRouter, ensureAdmin } = require('./admin');
+
 const app = express();
-app.use(cors());
+app.use(cors({ origin: true, credentials: true }));
+app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
+
+// Admin routes
+app.use('/admin', adminRouter);
 
 const PORT = process.env.API_PORT || 3888;
 const STRIPE_SECRET = process.env.STRIPE_SECRET_KEY;
@@ -224,8 +231,17 @@ app.get('/v1/admin/licenses', (req, res) => {
 });
 
 // ── Start ───────────────────────────────────────────────────────────────────
-app.listen(PORT, () => {
+async function start() {
+  await ensureAdmin();
   const count = db.prepare('SELECT COUNT(*) as c FROM licenses').get().c;
-  console.log(`[eon-chat-api] running on http://localhost:${PORT}`);
-  console.log(`[eon-chat-api] ${count} licenses in database`);
+  app.listen(PORT, () => {
+    console.log(`[eon-chat-api] running on http://localhost:${PORT}`);
+    console.log(`[eon-chat-api] ${count} licenses in database`);
+    console.log(`[eon-chat-api] admin panel: http://localhost:${PORT}/admin.html`);
+  });
+}
+
+start().catch(err => {
+  console.error('[startup]', err);
+  process.exit(1);
 });
