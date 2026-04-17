@@ -115,8 +115,10 @@ router.get('/stats', requireAdmin, (req, res) => {
   const expired = db.prepare("SELECT COUNT(*) as c FROM licenses WHERE status = 'expired'").get().c;
   const trial = db.prepare("SELECT COUNT(*) as c FROM licenses WHERE status = 'trial'").get().c;
 
-  // Revenue estimate (active * $9)
-  const mrr = active * 9;
+  // Revenue estimate (active paying plans * $9, exclude free)
+  const paying = db.prepare("SELECT COUNT(*) as c FROM licenses WHERE status = 'active' AND plan != 'free'").get().c;
+  const free = db.prepare("SELECT COUNT(*) as c FROM licenses WHERE status = 'active' AND plan = 'free'").get().c;
+  const mrr = paying * 9;
 
   // Recent activity
   const recentSignups = db.prepare(
@@ -134,6 +136,8 @@ router.get('/stats', requireAdmin, (req, res) => {
     expired,
     trial,
     mrr,
+    paying,
+    free,
     recentSignups,
     recentVerifications,
   });
@@ -142,7 +146,7 @@ router.get('/stats', requireAdmin, (req, res) => {
 // ── Licenses CRUD ───────────────────────────────────────────────────────────
 
 router.get('/licenses', requireAdmin, (req, res) => {
-  const { status, search, limit = 50, offset = 0 } = req.query;
+  const { status, plan, search, limit = 50, offset = 0 } = req.query;
 
   let sql = 'SELECT * FROM licenses WHERE 1=1';
   const params = [];
@@ -152,9 +156,14 @@ router.get('/licenses', requireAdmin, (req, res) => {
     params.push(status);
   }
 
+  if (plan) {
+    sql += ' AND plan = ?';
+    params.push(plan);
+  }
+
   if (search) {
-    sql += ' AND (email LIKE ? OR key LIKE ?)';
-    params.push(`%${search}%`, `%${search}%`);
+    sql += ' AND (email LIKE ? OR key LIKE ? OR note LIKE ?)';
+    params.push(`%${search}%`, `%${search}%`, `%${search}%`);
   }
 
   sql += ' ORDER BY created_at DESC LIMIT ? OFFSET ?';
@@ -187,17 +196,20 @@ router.delete('/licenses/:id', requireAdmin, (req, res) => {
   res.json({ ok: true });
 });
 
-// Create manual license
+// Create manual license (supports free/trial with expiry)
 router.post('/licenses', requireAdmin, express.json(), (req, res) => {
-  const { email, plan = 'pro' } = req.body;
+  const { email, plan = 'pro', note, expiresInDays } = req.body;
   if (!email) return res.status(400).json({ error: 'Email required' });
 
   const key = `eon_${crypto.randomBytes(24).toString('hex')}`;
-  db.prepare(
-    'INSERT INTO licenses (key, email, plan, status, created_at) VALUES (?, ?, ?, ?, ?)'
-  ).run(key, email, plan, 'active', Math.floor(Date.now() / 1000));
+  const now = Math.floor(Date.now() / 1000);
+  const expiresAt = expiresInDays ? now + expiresInDays * 24 * 3600 : null;
 
-  res.json({ key, email, plan });
+  db.prepare(
+    'INSERT INTO licenses (key, email, plan, status, created_at, expires_at, note) VALUES (?, ?, ?, ?, ?, ?, ?)'
+  ).run(key, email, plan, 'active', now, expiresAt, note || null);
+
+  res.json({ key, email, plan, expiresAt });
 });
 
 // ── Change password ─────────────────────────────────────────────────────────

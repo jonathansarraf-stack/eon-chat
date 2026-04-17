@@ -21,7 +21,8 @@ db.exec(`
     stripe_subscription_id TEXT,
     created_at INTEGER NOT NULL DEFAULT (unixepoch()),
     expires_at INTEGER,
-    last_verified_at INTEGER
+    last_verified_at INTEGER,
+    note TEXT
   );
 
   CREATE INDEX IF NOT EXISTS idx_licenses_key ON licenses(key);

@@ -122,10 +122,10 @@
 
     <!-- Stats -->
     <div class="stats">
-      <div class="stat accent"><div class="label">MRR</div><div class="value" id="s-mrr">—</div><div class="sub">receita mensal</div></div>
+      <div class="stat accent"><div class="label">MRR</div><div class="value" id="s-mrr">—</div><div class="sub" id="s-paying-sub">pagantes</div></div>
       <div class="stat green"><div class="label">Ativos</div><div class="value" id="s-active">—</div><div class="sub" id="s-total-sub"></div></div>
+      <div class="stat" style="border-left:2px solid #00f0ff"><div class="label">Free</div><div class="value" id="s-free" style="color:#00f0ff">—</div><div class="sub">licencas gratuitas</div></div>
       <div class="stat"><div class="label">Novos 7d</div><div class="value" id="s-recent">—</div><div class="sub">signups recentes</div></div>
-      <div class="stat"><div class="label">Verificacoes 24h</div><div class="value" id="s-verif">—</div><div class="sub">uso ativo</div></div>
     </div>
 
     <!-- Licenses table -->
@@ -141,12 +141,18 @@
             <option value="expired">Expirados</option>
             <option value="trial">Trial</option>
           </select>
+          <select id="filter-plan" onchange="loadLicenses()">
+            <option value="">Todos planos</option>
+            <option value="free">Free</option>
+            <option value="pro">Pro</option>
+            <option value="starter">Starter</option>
+          </select>
           <button onclick="showNewModal()">+ Nova</button>
         </div>
       </div>
       <table>
         <thead>
-          <tr><th>Email</th><th>Key</th><th>Plano</th><th>Status</th><th>Criado</th><th>Ultimo uso</th><th></th></tr>
+          <tr><th>Email</th><th>Key</th><th>Plano</th><th>Status</th><th>Expira</th><th>Nota</th><th></th></tr>
         </thead>
         <tbody id="licenses-body">
           <tr><td colspan="7" class="empty">Carregando...</td></tr>
@@ -166,14 +172,27 @@
 <!-- New License Modal -->
 <div class="modal-overlay" id="new-modal">
   <div class="modal">
-    <h3>Criar Licenca Manual</h3>
+    <h3>Criar Licenca</h3>
     <label>Email</label>
     <input type="email" id="new-email" placeholder="usuario@email.com">
     <label>Plano</label>
-    <select id="new-plan">
+    <select id="new-plan" onchange="toggleExpiry()">
+      <option value="free">Free (teste gratuito)</option>
       <option value="pro">Pro ($9/mo)</option>
       <option value="starter">Starter</option>
     </select>
+    <div id="expiry-wrap">
+      <label>Expira em</label>
+      <select id="new-expiry">
+        <option value="7">7 dias</option>
+        <option value="14" selected>14 dias</option>
+        <option value="30">30 dias</option>
+        <option value="90">90 dias</option>
+        <option value="0">Sem limite</option>
+      </select>
+    </div>
+    <label>Nota (opcional)</label>
+    <input type="text" id="new-note" placeholder="Ex: testador beta, parceiro, etc.">
     <div class="btn-row">
       <button class="btn-cancel" onclick="closeModal('new-modal')">Cancelar</button>
       <button class="btn-confirm" onclick="createLicense()">Criar</button>
@@ -198,6 +217,7 @@
     </select>
     <label>Plano</label>
     <select id="edit-plan">
+      <option value="free">Free</option>
       <option value="pro">Pro</option>
       <option value="starter">Starter</option>
     </select>
@@ -271,10 +291,11 @@ async function loadStats() {
     const res = await fetch(`${API}/admin/stats`, { credentials: 'include' });
     const s = await res.json();
     document.getElementById('s-mrr').textContent = '$' + s.mrr;
+    document.getElementById('s-paying-sub').textContent = `${s.paying} pagantes`;
     document.getElementById('s-active').textContent = s.active;
     document.getElementById('s-total-sub').textContent = `de ${s.total} total`;
+    document.getElementById('s-free').textContent = s.free;
     document.getElementById('s-recent').textContent = s.recentSignups;
-    document.getElementById('s-verif').textContent = s.recentVerifications;
   } catch {}
 }
 
@@ -288,9 +309,11 @@ function debounceLoad() {
 async function loadLicenses() {
   const search = document.getElementById('search-input').value;
   const status = document.getElementById('filter-status').value;
+  const plan = document.getElementById('filter-plan').value;
   const params = new URLSearchParams({ limit: PAGE_SIZE, offset: currentPage * PAGE_SIZE });
   if (search) params.set('search', search);
   if (status) params.set('status', status);
+  if (plan) params.set('plan', plan);
 
   try {
     const res = await fetch(`${API}/admin/licenses?${params}`, { credentials: 'include' });
@@ -305,7 +328,7 @@ async function loadLicenses() {
 function renderTable(licenses) {
   const body = document.getElementById('licenses-body');
   if (!licenses.length) {
-    body.innerHTML = '<tr><td colspan="7" class="empty">Nenhuma licenca encontrada</td></tr>';
+    body.innerHTML = '<tr><td colspan="7" class="empty">Nenhuma licenca</td></tr>';
     return;
   }
   body.innerHTML = licenses.map(l => `
@@ -314,8 +337,8 @@ function renderTable(licenses) {
       <td class="key-cell" title="${esc(l.key)}" onclick="navigator.clipboard.writeText('${esc(l.key)}')">${esc(l.key.slice(0, 16))}...</td>
       <td>${esc(l.plan)}</td>
       <td><span class="badge badge-${l.status}">${l.status}</span></td>
-      <td style="font-size:11px;color:var(--text2)">${fmtDate(l.created_at)}</td>
-      <td style="font-size:11px;color:var(--text2)">${l.last_verified_at ? fmtDate(l.last_verified_at) : '—'}</td>
+      <td style="font-size:11px;color:${l.expires_at && l.expires_at < Date.now()/1000 ? 'var(--danger)' : 'var(--text2)'}">${l.expires_at ? fmtDate(l.expires_at) : '—'}</td>
+      <td style="font-size:11px;color:var(--text3);max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(l.note||'')}">${esc(l.note||'—')}</td>
       <td>
         <div class="actions">
           <button onclick='editLicense(${JSON.stringify(l)})'>Editar</button>
@@ -333,25 +356,41 @@ function nextPage() { currentPage++; loadLicenses(); }
 
 function showNewModal() {
   document.getElementById('new-email').value = '';
+  document.getElementById('new-note').value = '';
+  document.getElementById('new-plan').value = 'free';
   document.getElementById('new-result').style.display = 'none';
+  toggleExpiry();
   document.getElementById('new-modal').classList.add('show');
+}
+
+function toggleExpiry() {
+  const plan = document.getElementById('new-plan').value;
+  document.getElementById('expiry-wrap').style.display = plan === 'free' ? 'block' : 'none';
 }
 
 async function createLicense() {
   const email = document.getElementById('new-email').value;
   const plan = document.getElementById('new-plan').value;
+  const note = document.getElementById('new-note').value;
   if (!email) return;
+
+  const body = { email, plan, note };
+  if (plan === 'free') {
+    const days = Number(document.getElementById('new-expiry').value);
+    if (days > 0) body.expiresInDays = days;
+  }
 
   const res = await fetch(`${API}/admin/licenses`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, plan }),
+    body: JSON.stringify(body),
     credentials: 'include',
   });
   const data = await res.json();
   if (data.key) {
     const el = document.getElementById('new-result');
-    el.textContent = data.key;
+    const expiry = data.expiresAt ? ` (expira ${new Date(data.expiresAt * 1000).toLocaleDateString('pt-BR')})` : ' (sem limite)';
+    el.textContent = data.key + expiry;
     el.style.display = 'block';
     loadLicenses();
     loadStats();
