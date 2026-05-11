@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Eon Chat Control Plane</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="shell">
+      <header class="hero">
+        <div>
+          <p class="eyebrow">Eon Chat SaaS</p>
+          <h1>Multi-tenant control plane, billing, providers and live runs.</h1>
+          <p class="hero-copy">
+            This workspace is now wired to tenants, Stripe, Claude Code, Codex and a real execution queue.
+          </p>
+          <div class="hero-actions">
+            <a class="button-link" href="#auth-section">Sign in</a>
+            <a class="button-link ghost-link" href="#auth-section">Create account</a>
+          </div>
+        </div>
+        <div class="status-panel">
+          <div class="status-chip" id="user-chip">Signed out</div>
+          <div class="status-chip" id="tenant-chip">No tenant selected</div>
+          <div class="status-chip" id="worker-chip">Worker required for queued runs</div>
+        </div>
+      </header>
+
+      <main class="grid">
+        <section class="card auth-card" id="auth-section">
+          <div class="card-head">
+            <h2>Auth</h2>
+            <button class="ghost" id="signout-btn" type="button">Sign out</button>
+          </div>
+          <p class="subtle auth-intro">Use your account to sign in or create a new workspace admin account.</p>
+
+          <div class="split">
+            <form id="signup-form" class="stack">
+              <h3>Create account</h3>
+              <input name="name" placeholder="Name" />
+              <input name="email" placeholder="Email" type="email" required />
+              <input name="password" placeholder="Password" type="password" required />
+              <input name="inviteToken" id="signup-invite-token" placeholder="Invite token (optional)" />
+              <button type="submit">Sign up</button>
+            </form>
+
+            <form id="signin-form" class="stack">
+              <h3>Sign in</h3>
+              <input name="email" placeholder="Email" type="email" required />
+              <input name="password" placeholder="Password" type="password" required />
+              <button type="submit">Sign in</button>
+            </form>
+          </div>
+          <div class="split">
+            <form id="verify-email-form" class="stack">
+              <h3>Verify email</h3>
+              <input name="verificationToken" id="verification-token-input" placeholder="Verification token" required />
+              <button type="submit">Verify</button>
+            </form>
+            <div class="stack">
+              <h3>Email status</h3>
+              <button id="request-verification-btn" class="ghost" type="button">Resend verification</button>
+              <pre id="auth-json" class="json-box"></pre>
+            </div>
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="card-head">
+            <h2>Tenant</h2>
+            <button class="ghost" id="refresh-context-btn" type="button">Refresh</button>
+          </div>
+
+          <div class="stack">
+            <label>
+              Active tenant
+              <select id="tenant-select"></select>
+            </label>
+            <form id="tenant-form" class="stack">
+              <h3>Bootstrap tenant</h3>
+              <input name="tenantName" placeholder="Tenant name" required />
+              <input name="tenantSlug" placeholder="tenant-slug" required />
+              <input name="workspaceName" placeholder="Workspace name" value="Default workspace" required />
+              <select name="planId">
+                <option value="starter">Starter</option>
+                <option value="pro">Pro</option>
+                <option value="enterprise">Enterprise</option>
+              </select>
+              <button type="submit">Create tenant</button>
+            </form>
+            <pre id="context-json" class="json-box"></pre>
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="card-head">
+            <h2>Billing</h2>
+            <div class="actions">
+              <button id="billing-refresh-btn" class="ghost" type="button">Refresh</button>
+              <button id="checkout-btn" type="button">Checkout</button>
+              <button id="portal-btn" class="ghost" type="button">Portal</button>
+            </div>
+          </div>
+          <pre id="billing-json" class="json-box"></pre>
+          <form id="enterprise-form" class="stack">
+            <h3>Enterprise Evaluation</h3>
+            <input name="name" placeholder="Full name" required />
+            <input name="email" type="email" placeholder="Work email" required />
+            <input name="company" placeholder="Company" required />
+            <input name="estimatedSeats" type="number" min="1" placeholder="Estimated seats" />
+            <textarea name="useCase" rows="4" placeholder="Describe your use case, security needs, and rollout." required></textarea>
+            <button id="enterprise-request-btn" type="submit">Request evaluation</button>
+          </form>
+          <div class="stack">
+            <h3>Evaluation Requests</h3>
+            <pre id="enterprise-json" class="json-box"></pre>
+          </div>
+          <form id="enterprise-manage-form" class="stack">
+            <h3>Qualify request</h3>
+            <select name="evaluationId" id="enterprise-evaluation-select" required>
+              <option value="">Select an evaluation</option>
+            </select>
+            <select name="status" id="enterprise-status-select">
+              <option value="">Keep current status</option>
+              <option value="new">New</option>
+              <option value="contacted">Contacted</option>
+              <option value="qualified">Qualified</option>
+              <option value="closed_won">Closed won</option>
+              <option value="closed_lost">Closed lost</option>
+            </select>
+            <textarea name="notesText" id="enterprise-notes-input" rows="3" placeholder="Internal sales notes"></textarea>
+            <button id="enterprise-manage-btn" type="submit">Save evaluation update</button>
+          </form>
+        </section>
+
+        <section class="card">
+          <div class="card-head">
+            <h2>Providers</h2>
+            <button id="providers-refresh-btn" class="ghost" type="button">Refresh</button>
+          </div>
+          <div class="split">
+            <div class="stack">
+              <label>
+                Workspace
+                <select id="workspace-select"></select>
+              </label>
+              <label>
+                Provider account
+                <select id="provider-account-select"></select>
+              </label>
+              <pre id="providers-json" class="json-box"></pre>
+            </div>
+            <form id="provider-form" class="stack">
+              <h3>Add provider account</h3>
+              <select name="provider" id="provider-kind" required>
+                <option value="claude_code">Claude Code</option>
+                <option value="codex">Codex</option>
+              </select>
+              <select name="mode">
+                <option value="byok">BYOK</option>
+                <option value="platform_managed">Platform managed</option>
+              </select>
+              <input name="displayName" placeholder="Display name" required />
+              <input name="secret" placeholder="API key / token" required />
+              <select name="defaultModel" id="provider-model-select"></select>
+              <button type="submit">Save provider account</button>
+            </form>
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="card-head">
+            <h2>Members</h2>
+            <button id="members-refresh-btn" class="ghost" type="button">Refresh</button>
+          </div>
+          <div class="split">
+            <div class="stack">
+              <form id="member-invite-form" class="stack">
+                <h3>Invite member</h3>
+                <input name="email" type="email" placeholder="teammate@company.com" required />
+                <select name="role">
+                  <option value="developer">Developer</option>
+                  <option value="viewer">Viewer</option>
+                  <option value="billing_admin">Billing admin</option>
+                  <option value="admin">Admin</option>
+                </select>
+                <button type="submit">Create invite</button>
+              </form>
+              <form id="invite-accept-form" class="stack">
+                <h3>Accept invite</h3>
+                <input name="inviteToken" id="invite-token-input" placeholder="Paste invite token" required />
+                <button type="submit">Accept invite</button>
+              </form>
+            </div>
+            <div class="stack">
+              <h3>Members and invites</h3>
+              <pre id="members-json" class="json-box"></pre>
+            </div>
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="card-head">
+            <h2>Ops</h2>
+            <button id="ops-refresh-btn" class="ghost" type="button">Refresh</button>
+          </div>
+          <div class="split">
+            <form id="ops-email-form" class="stack">
+              <h3>Retry failed email</h3>
+              <input name="emailId" placeholder="Failed email ID" required />
+              <button type="submit">Retry email</button>
+            </form>
+            <form id="ops-run-form" class="stack">
+              <h3>Requeue failed run</h3>
+              <input name="runId" placeholder="Failed run ID" required />
+              <button type="submit">Requeue run</button>
+            </form>
+          </div>
+          <pre id="ops-json" class="json-box"></pre>
+        </section>
+
+        <section class="card sessions-card">
+          <div class="card-head">
+            <h2>Chat Sessions</h2>
+            <button id="sessions-refresh-btn" class="ghost" type="button">Refresh</button>
+          </div>
+          <div class="split">
+            <div class="stack">
+              <form id="session-form" class="inline-form">
+                <input name="title" placeholder="New session title" required />
+                <button type="submit">Create</button>
+              </form>
+              <div id="session-list" class="list"></div>
+            </div>
+            <div class="stack chat-column">
+              <div id="chat-meta" class="subtle">Select a session to load messages and runs.</div>
+              <div id="message-list" class="message-list"></div>
+              <form id="prompt-form" class="stack">
+                <textarea name="prompt" rows="5" placeholder="Send a prompt to the selected provider account." required></textarea>
+                <button type="submit">Queue run</button>
+              </form>
+              <div class="stack">
+                <h3>Run events</h3>
+                <pre id="events-json" class="json-box"></pre>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <div id="toast" class="toast hidden"></div>
+    <script src="/app.js" defer></script>
+  </body>
+</html>

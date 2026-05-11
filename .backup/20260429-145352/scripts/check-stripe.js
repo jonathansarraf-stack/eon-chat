@@ -1,0 +1,13 @@
+'use strict';
+
+const { getBillingHealth } = require('../src/services/billing-service');
+
+async function main() {
+  const health = await getBillingHealth();
+  console.log(JSON.stringify(health, null, 2));
+}
+
+main().catch((error) => {
+  console.error(error);
+  process.exitCode = 1;
+});

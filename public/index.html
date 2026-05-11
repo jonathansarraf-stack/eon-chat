@@ -1,0 +1,353 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#0a0a0f" />
+<title>Chat · EON</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/styles.css?v=mobile-ui-4" />
+</head>
+<body>
+<div id="toast" class="toast hidden"></div>
+
+<div id="login-screen" class="screen active">
+  <div class="login-card">
+    <div class="eon-mark">
+      <svg class="logo-svg" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+        <g transform="translate(100, 100)">
+          <path d="M -30 -60 L -30 20 Q -30 35 -15 35 L 15 35 Q 30 35 30 20 L 30 -60" stroke-width="7" stroke-linejoin="round" fill="none"/>
+          <line x1="-18" y1="-60" x2="-18" y2="35" stroke-width="7" stroke-linejoin="round"/>
+          <line x1="0" y1="-75" x2="0" y2="35" stroke-width="7" stroke-linejoin="round"/>
+          <line x1="18" y1="-60" x2="18" y2="35" stroke-width="7" stroke-linejoin="round"/>
+          <circle class="palm-dot" cx="0" cy="0" r="11"/>
+        </g>
+      </svg>
+      <span>CHAT / EON</span>
+    </div>
+
+    <div class="login-hero">
+      <div class="kicker">EON CHAT</div>
+      <h1>Seu chat, <em>do mesmo jeito.</em></h1>
+      <p>Mesma experiência do chat mobile, agora com tenants, environments e projetos próprios para cada cliente.</p>
+    </div>
+
+    <form id="signin-form" class="login-form">
+      <input name="email" type="email" placeholder="seu@email.com" autocomplete="email" required>
+      <input name="password" type="password" placeholder="Senha" autocomplete="current-password" required>
+      <button type="submit" id="login-btn">Entrar</button>
+      <p class="login-error" id="login-error"></p>
+    </form>
+
+    <div class="login-secondary">
+      <form id="signup-form" class="login-form auth-mini">
+        <div class="mini-title">Criar conta</div>
+        <input name="name" placeholder="Nome">
+        <input name="email" type="email" placeholder="Email" required>
+        <input name="password" type="password" placeholder="Senha" required>
+        <input name="inviteToken" id="signup-invite-token" placeholder="Token de convite (opcional)">
+        <button type="submit">Criar conta</button>
+      </form>
+
+      <div class="login-secondary-row">
+        <form id="verify-email-form" class="login-form auth-mini compact">
+          <div class="mini-title">Verificar email</div>
+          <input name="verificationToken" id="verification-token-input" placeholder="Token de verificação" required>
+          <button type="submit">Verificar</button>
+        </form>
+        <form id="invite-accept-form" class="login-form auth-mini compact">
+          <div class="mini-title">Aceitar convite</div>
+          <input name="inviteToken" id="invite-token-input" placeholder="Token do convite" required>
+          <button type="submit">Entrar no tenant</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="login-links">
+      <button id="request-verification-btn" type="button" class="control-btn">Reenviar verificação</button>
+    </div>
+    <pre id="auth-json" class="json-box hidden"></pre>
+  </div>
+</div>
+
+<div id="proj-tooltip"></div>
+
+<div id="home-screen" class="screen">
+  <header class="home-topbar">
+    <div class="eon-mark">
+      <svg class="logo-svg" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+        <g transform="translate(100, 100)">
+          <path d="M -30 -60 L -30 20 Q -30 35 -15 35 L 15 35 Q 30 35 30 20 L 30 -60" stroke-width="7" stroke-linejoin="round" fill="none"/>
+          <line x1="-18" y1="-60" x2="-18" y2="35" stroke-width="7" stroke-linejoin="round"/>
+          <line x1="0" y1="-75" x2="0" y2="35" stroke-width="7" stroke-linejoin="round"/>
+          <line x1="18" y1="-60" x2="18" y2="35" stroke-width="7" stroke-linejoin="round"/>
+          <circle class="palm-dot" cx="0" cy="0" r="11"/>
+        </g>
+      </svg>
+      <span>CHAT / EON</span>
+    </div>
+    <div class="home-topbar-controls">
+      <select id="tenant-select" class="home-select"></select>
+      <select id="workspace-select" class="home-select"></select>
+      <select id="environment-select" class="home-select"></select>
+      <button id="refresh-btn" type="button" class="control-btn">Atualizar</button>
+      <button class="user-chip" id="home-user-chip" type="button">—</button>
+      <button id="signout-btn" type="button" class="control-btn">Sair</button>
+    </div>
+  </header>
+
+  <div class="control-context" id="context-line">Crie ou selecione um tenant para começar.</div>
+
+  <div id="verification-banner" class="info-banner hidden">
+    <span>Email ainda não verificado. Criar tenant, conectar environment, salvar projeto e rodar prompts ficam bloqueados até a verificação.</span>
+    <button id="banner-verification-btn" type="button" class="control-btn">Reenviar email</button>
+  </div>
+
+  <div class="home-tabs">
+    <button class="home-tab active" data-panel="projects" type="button">Projetos</button>
+    <button class="home-tab" data-panel="conversations" type="button">Conversas</button>
+    <button class="home-tab" data-panel="activities" type="button">Atividades</button>
+  </div>
+
+  <div class="home-wrap">
+    <div id="panel-projects" class="home-panel active">
+      <div id="onboarding-card" class="modal-inline onboarding-inline hidden">
+        <div class="form-title">Primeiro tenant</div>
+        <div class="inline-note">Crie o tenant e o workspace inicial antes de conectar VMs, agents e projetos.</div>
+        <form id="tenant-form" class="inline-form-grid">
+          <input name="tenantName" placeholder="Nome do tenant" required>
+          <input name="tenantSlug" placeholder="slug-do-tenant" required>
+          <input name="workspaceName" placeholder="Nome do workspace" value="Default workspace" required>
+          <select name="planId">
+            <option value="starter">Starter</option>
+            <option value="pro">Pro</option>
+            <option value="enterprise">Enterprise</option>
+          </select>
+          <button type="submit">Criar tenant</button>
+        </form>
+      </div>
+
+      <div class="home-hero">
+        <div class="kicker">PROJETOS</div>
+        <h1>Teus <em>projetos,</em> no teu próprio ambiente.</h1>
+        <p>Cada tenant conecta as próprias VMs ou agents. Cada projeto nasce dentro do próprio environment e vira contexto de conversa para Claude Code ou Codex.</p>
+      </div>
+
+      <div class="home-actions">
+        <button class="primary" id="toggle-project-form-btn" type="button">+ Novo projeto</button>
+        <button id="toggle-environment-form-btn" type="button">+ Novo environment</button>
+        <button id="toggle-discovery-form-btn" type="button">Solicitar descoberta</button>
+      </div>
+
+      <div class="form-stack">
+        <form id="environment-form" class="modal-inline hidden">
+          <div class="form-title">Novo environment</div>
+          <div class="inline-form-grid two-up">
+            <input name="name" placeholder="Nome do environment" required>
+            <input name="slug" placeholder="Slug (opcional)">
+            <select name="kind" required>
+              <option value="ssh">VM via SSH</option>
+              <option value="agent">Agent remoto</option>
+              <option value="local_agent">Agent local</option>
+              <option value="docker_host">Docker host</option>
+            </select>
+            <input name="host" placeholder="Host ou IP">
+            <input name="port" type="number" min="1" max="65535" placeholder="Porta">
+            <input name="agentIdentifier" placeholder="Agent identifier (opcional)">
+          </div>
+          <button type="submit">Salvar environment</button>
+        </form>
+
+        <form id="project-form" class="modal-inline hidden">
+          <div class="form-title">Novo projeto</div>
+          <div class="inline-form-grid two-up">
+            <input name="name" placeholder="Nome do projeto" required>
+            <input name="slug" placeholder="Slug (opcional)">
+            <input name="rootPath" placeholder="/srv/apps/meu-projeto" required>
+            <select name="source">
+              <option value="manual">Manual</option>
+              <option value="imported">Imported</option>
+              <option value="discovered">Discovered</option>
+              <option value="synced">Synced</option>
+            </select>
+          </div>
+          <button type="submit">Salvar projeto</button>
+        </form>
+
+        <form id="discovery-form" class="modal-inline hidden">
+          <div class="form-title">Solicitar discovery</div>
+          <div class="inline-note">A descoberta roda dentro do environment do tenant, não na VM host compartilhada.</div>
+          <div class="inline-form-grid two-up">
+            <select name="strategy">
+              <option value="agent_inventory">Descoberta via agent</option>
+              <option value="ssh_scan">Varredura via SSH</option>
+              <option value="manual">Solicitação manual</option>
+            </select>
+            <button type="submit">Enfileirar</button>
+          </div>
+          <textarea name="requestJson" rows="3" placeholder='JSON opcional, ex: {"rootPaths":["/srv/apps","/root"]}'></textarea>
+        </form>
+      </div>
+
+      <div id="quick-access" class="quick-access"></div>
+
+      <div class="projects-search">
+        <span class="search-icon">&#128269;</span>
+        <input id="project-search" type="text" placeholder="Buscar projeto...">
+      </div>
+
+      <div id="projects-container"></div>
+    </div>
+
+    <div id="panel-conversations" class="home-panel">
+      <div class="home-hero compact-hero">
+        <div class="kicker">CONVERSAS</div>
+        <h1>Teus <em>contextos,</em> por projeto.</h1>
+        <p>Escolha um projeto, veja as conversas daquele ambiente e continue exatamente de onde parou.</p>
+      </div>
+      <div class="conversation-defaults">
+        <select id="provider-account-select" class="home-select"></select>
+        <select id="model-select" class="home-select"></select>
+        <button id="create-session-btn" type="button" class="control-btn">+ Nova conversa</button>
+      </div>
+      <div class="conv-project-tabs" id="conv-project-tabs"></div>
+      <div class="conv-sessions-list" id="conv-sessions-list"></div>
+    </div>
+
+    <div id="panel-activities" class="home-panel">
+      <div class="home-hero compact-hero">
+        <div class="kicker">ATIVIDADES</div>
+        <h1>O que o <em>tenant</em> precisa.</h1>
+        <p>Conexões, provider accounts, billing e solicitações de discovery em um painel com a mesma linguagem visual do chat.</p>
+      </div>
+
+      <div class="activity-surface-grid">
+        <section class="activity-surface">
+          <div class="surface-head">
+            <div>
+              <div class="kicker">STATUS</div>
+              <h3>Contexto atual</h3>
+            </div>
+          </div>
+          <pre id="context-json" class="json-box"></pre>
+        </section>
+
+        <section class="activity-surface">
+          <div class="surface-head">
+            <div>
+              <div class="kicker">BILLING</div>
+              <h3>Entitlement do tenant</h3>
+            </div>
+          </div>
+          <pre id="billing-json" class="json-box"></pre>
+        </section>
+
+        <section class="activity-surface">
+          <div class="surface-head">
+            <div>
+              <div class="kicker">PROVIDERS</div>
+              <h3>Contas do workspace</h3>
+            </div>
+            <button id="toggle-provider-form-btn" type="button" class="control-btn">+ Provider</button>
+          </div>
+          <form id="provider-form" class="modal-inline hidden provider-inline">
+            <div class="inline-form-grid two-up">
+              <select name="provider" id="provider-kind" required>
+                <option value="claude_code">Claude Code</option>
+                <option value="codex">Codex</option>
+              </select>
+              <select name="mode">
+                <option value="byok">BYOK</option>
+                <option value="platform_managed">Platform managed</option>
+              </select>
+              <input name="displayName" placeholder="Nome da conta" required>
+              <input name="secret" placeholder="API key / token" required>
+            </div>
+            <select name="defaultModel" id="provider-model-select"></select>
+            <button type="submit">Salvar provider</button>
+          </form>
+          <pre id="providers-json" class="json-box"></pre>
+        </section>
+
+        <section class="activity-surface">
+          <div class="surface-head">
+            <div>
+              <div class="kicker">DISCOVERY</div>
+              <h3>Solicitações do environment</h3>
+            </div>
+          </div>
+          <pre id="discovery-json" class="json-box"></pre>
+        </section>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="app-screen" class="screen">
+  <div class="sidebar-overlay" id="sidebar-overlay"></div>
+  <aside id="sidebar">
+    <div class="sidebar-header">
+      <div class="eon-mark">
+        <svg class="logo-svg" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+          <g transform="translate(100, 100)">
+            <path d="M -30 -60 L -30 20 Q -30 35 -15 35 L 15 35 Q 30 35 30 20 L 30 -60" stroke-width="7" stroke-linejoin="round" fill="none"/>
+            <line x1="-18" y1="-60" x2="-18" y2="35" stroke-width="7" stroke-linejoin="round"/>
+            <line x1="0" y1="-75" x2="0" y2="35" stroke-width="7" stroke-linejoin="round"/>
+            <line x1="18" y1="-60" x2="18" y2="35" stroke-width="7" stroke-linejoin="round"/>
+            <circle class="palm-dot" cx="0" cy="0" r="11"/>
+          </g>
+        </svg>
+      </div>
+      <button id="create-session-btn-sidebar" class="new-btn" type="button">＋ Nova</button>
+      <button id="sidebar-close-btn" class="close-btn" type="button">×</button>
+    </div>
+    <div id="session-list"></div>
+    <div class="sidebar-footer">
+      <span class="user-info" id="user-email">—</span>
+      <button id="signout-btn-sidebar" type="button">Sair</button>
+    </div>
+  </aside>
+
+  <header class="topbar">
+    <button id="go-home-btn" class="back-btn" type="button" title="Voltar pra home">←</button>
+    <button id="sidebar-menu-btn" class="menu-btn" type="button">☰</button>
+    <div class="session-title">
+      <input id="current-title" placeholder="Nova conversa" readonly>
+    </div>
+    <select id="chat-provider-account-select" class="provider-select" title="Provider"></select>
+    <select id="chat-model-select" class="mode-select" title="Modelo"></select>
+    <span id="provider-cost-chip" class="provider-cost-chip medium">Médio · compacto</span>
+    <span class="project-badge" id="current-project-badge" style="display:none"></span>
+    <span class="queue-chip" id="queue-chip"><span id="queue-chip-text"></span></span>
+    <button class="user-btn" id="session-count-btn" type="button" title="Sessões">—</button>
+  </header>
+
+  <div class="project-tabs" id="project-tabs"></div>
+
+  <main id="main"></main>
+
+  <footer class="composer">
+    <form id="prompt-form" class="composer-wrap">
+      <div id="attachments" class="attachments"></div>
+      <textarea id="msg-input" name="prompt" placeholder="Mensagem..." rows="1" required></textarea>
+      <div class="composer-tools">
+        <button class="tool-btn" type="button" disabled aria-label="Anexar" title="Anexar arquivo">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+        </button>
+        <button class="tool-btn" type="button" disabled aria-label="Gravar voz" title="Ditado por voz">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+        </button>
+        <button id="send-btn" class="send-btn" type="submit" aria-label="Enviar">↑</button>
+      </div>
+    </form>
+  </footer>
+
+  <pre id="events-json" class="hidden"></pre>
+  <div class="drop-overlay" id="drop-overlay"><div class="drop-overlay-inner">Solte aqui para anexar</div></div>
+</div>
+
+<script src="/app.js?v=mobile-ui-4" defer></script>
+</body>
+</html>

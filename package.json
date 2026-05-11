@@ -1,0 +1,23 @@
+{
+  "name": "eon-chat-control-plane",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Multi-tenant SaaS control plane for Eon Chat",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "worker": "node scripts/worker.js",
+    "email-worker": "node scripts/email-worker.js",
+    "migrate": "node scripts/migrate.js",
+    "check:stripe": "node scripts/check-stripe.js",
+    "check": "node --check src/server.js && node --check scripts/migrate.js",
+    "test": "node --test --test-concurrency=1 tests/*.test.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "express": "^4.21.2",
+    "pg": "^8.16.3",
+    "stripe": "^18.5.0"
+  }
+}
